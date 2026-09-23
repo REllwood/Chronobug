@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Rehearse time-zone transitions with an injected virtual clock.">
+    <title>Chronobug</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">A laboratory for difficult minutes</p>
+        <h1>Chronobug</h1>
+      </div>
+      <p>Set an application clock at the local time that disappears, repeats or expires too soon.</p>
+    </header>
+
+    <main>
+      <section class="clock-readout" aria-labelledby="clock-heading">
+        <div>
+          <p class="eyebrow">Injected application time</p>
+          <h2 id="clock-heading" tabindex="-1">Virtual clock</h2>
+        </div>
+        <output id="virtual-time">Not activated</output>
+        <dl>
+          <div><dt>Real wall time</dt><dd id="real-time">—</dd></div>
+          <div><dt>Zone</dt><dd id="active-zone">Not activated</dd></div>
+          <div><dt>Pending timers</dt><dd id="pending-count">0</dd></div>
+        </dl>
+      </section>
+
+      <section class="scenario" aria-labelledby="scenario-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Scenario bench</p>
+          <h2 id="scenario-heading">Resolve a wall time</h2>
+          <p>A local time may map to no instant, one instant or two instants.</p>
+        </div>
+        <form id="scenario-form">
+          <label>Time zone <input id="zone" value="Australia/Melbourne" spellcheck="false"></label>
+          <label>Local wall time <input id="local-time" type="datetime-local" value="2026-10-04T02:30"></label>
+          <label id="resolution-label" hidden>Overlap resolution
+            <select id="resolution"></select>
+          </label>
+          <div class="presets" aria-label="Example transition scenarios">
+            <button type="button" data-preset="2026-10-04T02:30">Melbourne spring gap</button>
+            <button type="button" data-preset="2026-04-05T02:30">Melbourne autumn overlap</button>
+            <button type="button" data-preset="2026-07-24T12:00">Ordinary winter time</button>
+          </div>
+          <div class="actions">
+            <button type="submit" id="activate">Resolve and activate</button>
+            <button type="button" id="cancel" class="quiet" hidden>Cancel activation</button>
+          </div>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+          <p id="error" class="error" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="timers" aria-labelledby="timers-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Timer queue</p>
+          <h2 id="timers-heading">Rehearse scheduled work</h2>
+        </div>
+        <div>
+          <form id="timer-form">
+            <label>Timer label <input id="timer-label" value="Reservation expires"></label>
+            <label>Delay in minutes <input id="timer-delay" type="number" min="0" max="10080" value="20"></label>
+            <button type="submit">Schedule timer</button>
+          </form>
+          <div class="advance">
+            <button type="button" data-advance="5">Advance 5 minutes</button>
+            <button type="button" data-advance="30">Advance 30 minutes</button>
+            <button type="button" data-advance="1440">Advance one day</button>
+          </div>
+          <ol id="timeline" class="timeline"><li class="empty">No clock events yet.</li></ol>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>The laboratory controls only its injected clock. Real wall time and external services remain unchanged.</p>
+    </footer>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>

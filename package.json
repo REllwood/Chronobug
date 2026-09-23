@@ -1,0 +1,24 @@
+{
+  "name": "chronobug",
+  "version": "0.1.0",
+  "description": "Put a web application at the exact date, time zone and clock transition where it misbehaves.",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REllwood/chronobug.git"
+  },
+  "homepage": "https://github.com/REllwood/chronobug#readme",
+  "bugs": {
+    "url": "https://github.com/REllwood/chronobug/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "check": "npm test && node --check server.mjs && node --check src/virtual-clock.mjs && node --check src/zoned-time.mjs && node --check public/app.mjs"
+  }
+}
