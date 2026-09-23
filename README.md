@@ -25,8 +25,8 @@ Time bugs live in the hour that happens twice in autumn and the hour that never 
 Requires Node.js 22 or newer. No `npm install` needed.
 
 ```sh
-git clone https://github.com/REllwood/chronobug.git
-cd chronobug
+git clone https://github.com/REllwood/Chronobug.git
+cd Chronobug
 npm start
 ```
 

@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/REllwood/chronobug.git"
+    "url": "git+https://github.com/REllwood/Chronobug.git"
   },
-  "homepage": "https://github.com/REllwood/chronobug#readme",
+  "homepage": "https://github.com/REllwood/Chronobug#readme",
   "bugs": {
-    "url": "https://github.com/REllwood/chronobug/issues"
+    "url": "https://github.com/REllwood/Chronobug/issues"
   },
   "type": "module",
   "engines": {
