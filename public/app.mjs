@@ -4,6 +4,7 @@ import {
   formatInZone,
   selectInstantForActivation
 } from "/zoned-time-core.mjs";
+import { offersOccurrencesFor } from "/lab-logic.mjs";
 
 const scenarioForm = document.querySelector("#scenario-form");
 const zoneInput = document.querySelector("#zone");
@@ -61,6 +62,11 @@ function wait(signal, duration = 160) {
   });
 }
 
+function resetResolution() {
+  resolutionLabel.hidden = true;
+  resolutionInput.replaceChildren();
+}
+
 function updateReadout() {
   if (!clock) {
     virtualTime.textContent = "Not activated";
@@ -94,6 +100,7 @@ realTime.textContent = new Date().toLocaleString("en-AU", { hour12: false });
 for (const preset of presetButtons) {
   preset.addEventListener("click", () => {
     localTimeInput.value = preset.dataset.preset;
+    resetResolution();
     status.textContent = `${preset.textContent} loaded. Resolve it to inspect the mapping.`;
   });
 }
@@ -116,7 +123,8 @@ scenarioForm.addEventListener("submit", async (event) => {
       resolutionLabel.hidden = true;
       throw new Error("This local wall time does not exist in the selected zone. Choose an explicit instant before activation.");
     }
-    if (classification.kind === "overlap" && resolutionInput.options.length === 0) {
+    const offered = [...resolutionInput.options].map((option) => option.value);
+    if (classification.kind === "overlap" && !offersOccurrencesFor(offered, classification)) {
       resolutionInput.replaceChildren();
       const prompt = document.createElement("option");
       prompt.value = "";
@@ -158,14 +166,8 @@ scenarioForm.addEventListener("submit", async (event) => {
 
 cancelButton.addEventListener("click", () => controller?.abort());
 
-localTimeInput.addEventListener("input", () => {
-  resolutionLabel.hidden = true;
-  resolutionInput.replaceChildren();
-});
-zoneInput.addEventListener("input", () => {
-  resolutionLabel.hidden = true;
-  resolutionInput.replaceChildren();
-});
+localTimeInput.addEventListener("input", resetResolution);
+zoneInput.addEventListener("input", resetResolution);
 
 timerForm.addEventListener("submit", (event) => {
   event.preventDefault();
