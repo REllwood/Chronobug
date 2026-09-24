@@ -43,6 +43,52 @@ test("isolates failed callbacks and continues advancing", () => {
   assert.equal(result.events[0].message, "fixture failure");
 });
 
+test("keeps each timer's remaining delay when the instant is set", () => {
+  const clock = new VirtualClock(0);
+  const seen = [];
+  clock.schedule(({ clock: current }) => seen.push(current.now()), 500, "half-second");
+  clock.setInstant(1000);
+  assert.equal(clock.pending()[0].dueAt, 1500);
+  clock.advanceBy(10);
+  assert.deepEqual(seen, []);
+  clock.advanceBy(490);
+  assert.deepEqual(seen, [1500]);
+  clock.schedule(() => {}, 100, "rewound");
+  clock.setInstant(0);
+  assert.equal(clock.pending()[0].dueAt, 100);
+});
+
+test("rejects clock changes from inside a timer callback", () => {
+  const clock = new VirtualClock(0);
+  clock.schedule(({ clock: current }) => current.advanceBy(1000), 10, "nested advance");
+  clock.schedule(({ clock: current }) => current.setInstant(5000), 20, "nested jump");
+  const result = clock.advanceBy(100);
+  assert.equal(result.completed, true);
+  assert.deepEqual(
+    result.events.map((event) => [event.label, event.outcome]),
+    [["nested advance", "failed"], ["nested jump", "failed"]]
+  );
+  assert.match(result.events[0].message, /advanceBy\(\) cannot be called from inside a timer callback/);
+  assert.match(result.events[1].message, /setInstant\(\) cannot be called from inside a timer callback/);
+  assert.equal(clock.now(), 100);
+  assert.equal(clock.advanceBy(1).completed, true);
+});
+
+test("never moves virtual time backwards while advancing", () => {
+  const clock = new VirtualClock(0);
+  const observed = [];
+  const record = ({ clock: current }) => observed.push(current.now());
+  clock.schedule(record, 300, "c");
+  clock.schedule(record, 100, "a");
+  clock.setInstant(250);
+  clock.schedule(record, 0, "b");
+  observed.push(clock.now());
+  clock.advanceBy(1000);
+  assert.deepEqual(observed, [...observed].sort((first, second) => first - second));
+  assert.equal(observed.length, 4);
+  assert.equal(clock.now(), 1250);
+});
+
 test("classifies Melbourne daylight-saving gap and overlap", () => {
   const gap = classifyLocalTime("2026-10-04T02:30", "Australia/Melbourne");
   const overlap = classifyLocalTime("2026-04-05T02:30", "Australia/Melbourne");
