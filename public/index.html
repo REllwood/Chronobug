@@ -64,8 +64,8 @@
         </div>
         <div>
           <form id="timer-form">
-            <label>Timer label <input id="timer-label" value="Reservation expires"></label>
-            <label>Delay in minutes <input id="timer-delay" type="number" min="0" max="10080" value="20"></label>
+            <label>Timer label <input id="timer-label" value="Reservation expires" required></label>
+            <label>Delay in minutes <input id="timer-delay" type="number" min="0" max="10080" step="1" value="20" required></label>
             <button type="submit">Schedule timer</button>
           </form>
           <div class="advance">
