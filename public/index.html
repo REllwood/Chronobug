@@ -21,7 +21,7 @@
       <section class="clock-readout" aria-labelledby="clock-heading">
         <div>
           <p class="eyebrow">Injected application time</p>
-          <h2 id="clock-heading" tabindex="-1">Virtual clock</h2>
+          <h2 id="clock-heading">Virtual clock</h2>
         </div>
         <output id="virtual-time">Not activated</output>
         <dl>
@@ -43,14 +43,14 @@
           <label id="resolution-label" hidden>Overlap resolution
             <select id="resolution"></select>
           </label>
-          <div class="presets" aria-label="Example transition scenarios">
+          <div class="presets" role="group" aria-label="Example transition scenarios">
             <button type="button" data-preset="2026-10-04T02:30">Melbourne spring gap</button>
             <button type="button" data-preset="2026-04-05T02:30">Melbourne autumn overlap</button>
             <button type="button" data-preset="2026-07-24T12:00">Ordinary winter time</button>
           </div>
           <div class="actions">
             <button type="submit" id="activate">Resolve and activate</button>
-            <button type="button" id="cancel" class="quiet" hidden>Cancel activation</button>
+            <button type="button" id="cancel" class="quiet" hidden>Cancel</button>
           </div>
           <p id="status" class="status" role="status" aria-live="polite"></p>
           <p id="error" class="error" role="alert" hidden></p>

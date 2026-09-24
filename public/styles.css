@@ -34,7 +34,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 .masthead h1 { margin: 0; font: 400 clamp(4rem, 11vw, 8.5rem)/.85 Georgia, serif; letter-spacing: -.06em; }
 .eyebrow { text-transform: uppercase; letter-spacing: .16em; font-size: .68rem; font-weight: 750; color: var(--signal); }
-main > section { display: grid; grid-template-columns: 17rem 1fr; gap: 4rem; padding: 3rem 0; border-bottom: 1px solid var(--ink); }
+main > section { display: grid; grid-template-columns: 17rem minmax(0, 1fr); gap: 4rem; padding: 3rem 0; border-bottom: 1px solid var(--ink); }
 .clock-readout output { font: clamp(2rem, 6vw, 5rem)/1 ui-monospace, "SFMono-Regular", monospace; letter-spacing: -.06em; }
 .clock-readout dl { grid-column: 2; display: grid; grid-template-columns: repeat(3, 1fr); margin: 1rem 0 0; }
 dl div { padding: .6rem 0; border-top: 1px solid var(--line); }
@@ -45,6 +45,7 @@ dd { margin: .25rem 0 0; }
 form { display: grid; gap: 1rem; }
 label { display: grid; gap: .35rem; font-weight: 650; }
 input, select { min-height: 2.8rem; border: 1px solid var(--line); background: var(--paper); padding: .55rem .7rem; color: var(--ink); }
+select { width: 100%; }
 .presets, .actions, .advance { display: flex; flex-wrap: wrap; gap: .55rem; }
 .status { min-height: 1.5rem; }
 .status[data-loading="true"]::before {
@@ -63,12 +64,14 @@ input, select { min-height: 2.8rem; border: 1px solid var(--line); background: v
 .error { color: #7d1712; border-left: 4px solid currentColor; padding-left: .8rem; }
 .timers > div:last-child { min-width: 0; }
 .advance { margin: 1rem 0; }
-.timeline { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.timeline li { display: grid; grid-template-columns: 10rem 1fr; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--line); }
+.timeline { display: grid; grid-template-columns: max-content minmax(0, 1fr); margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.timeline li { grid-column: 1 / -1; display: grid; grid-template-columns: max-content 1fr; grid-template-columns: subgrid; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--line); }
 .timeline time { font-family: ui-monospace, monospace; font-size: .8rem; }
 .empty { color: #5c584f; font-style: italic; }
 footer { padding: 1.5rem 0 4rem; font-size: .85rem; }
 @media (max-width: 760px) {
-  .masthead, main > section { grid-template-columns: 1fr; }
+  .masthead, main > section { grid-template-columns: minmax(0, 1fr); }
   .clock-readout dl { grid-column: 1; grid-template-columns: 1fr; }
+  .timeline { grid-template-columns: minmax(0, 1fr); }
+  .timeline li { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
 }
