@@ -1,4 +1,6 @@
 const formatterCache = new Map();
+const SEARCH_WINDOW = 16 * 60 * 60 * 1000;
+const OFFSET_SAMPLE_STEP = 15 * 60 * 1000;
 
 function formatterFor(zone) {
   if (!formatterCache.has(zone)) {
@@ -69,34 +71,30 @@ export function parseLocalDateTime(value) {
   return { year, month, day, hour, minute, second };
 }
 
+function wallClockMillis(parts) {
+  return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+}
+
+// Every instant showing the target wall time is `naive - offset` for an offset the zone
+// uses within the search window, so sample the window for offsets and test each candidate.
 export function possibleInstantsForLocal(localValue, zone) {
   const target = parseLocalDateTime(localValue);
-  const naive = Date.UTC(
-    target.year,
-    target.month - 1,
-    target.day,
-    target.hour,
-    target.minute,
-    target.second
-  );
+  const naive = wallClockMillis(target);
+  const offsets = new Set();
+  const start = naive - SEARCH_WINDOW - OFFSET_SAMPLE_STEP;
+  const end = naive + SEARCH_WINDOW + OFFSET_SAMPLE_STEP;
+  for (let instant = start; instant <= end; instant += OFFSET_SAMPLE_STEP) {
+    offsets.add(wallClockMillis(zonedParts(instant, zone)) - instant);
+  }
   const matches = [];
-  const start = naive - 16 * 60 * 60 * 1000;
-  const end = naive + 16 * 60 * 60 * 1000;
-  const step = target.second === 0 ? 60_000 : 1000;
-  for (let instant = start; instant <= end; instant += step) {
+  for (const offset of offsets) {
+    const instant = naive - offset;
     const parts = zonedParts(instant, zone);
-    if (
-      parts.year === target.year &&
-      parts.month === target.month &&
-      parts.day === target.day &&
-      parts.hour === target.hour &&
-      parts.minute === target.minute &&
-      parts.second === target.second
-    ) {
+    if (wallClockMillis(parts) === naive) {
       matches.push({ instant, iso: new Date(instant).toISOString(), offset: parts.offset });
     }
   }
-  return matches;
+  return matches.sort((first, second) => first.instant - second.instant);
 }
 
 export function classifyLocalTime(localValue, zone) {

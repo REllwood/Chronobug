@@ -99,6 +99,48 @@ test("classifies Melbourne daylight-saving gap and overlap", () => {
   assert.notEqual(overlap.matches[0].offset, overlap.matches[1].offset);
 });
 
+test("orders overlapping occurrences from earlier to later", () => {
+  const overlap = classifyLocalTime("2026-04-05T02:30", "Australia/Melbourne");
+  assert.deepEqual(
+    overlap.matches.map((match) => [match.iso, match.offset]),
+    [
+      ["2026-04-04T15:30:00.000Z", "GMT+11"],
+      ["2026-04-04T16:30:00.000Z", "GMT+10"]
+    ]
+  );
+});
+
+test("resolves zones whose offsets include seconds", () => {
+  const noon = classifyLocalTime("1970-06-01T12:00", "Africa/Monrovia");
+  assert.equal(noon.kind, "exact");
+  assert.equal(noon.matches[0].iso, "1970-06-01T12:44:30.000Z");
+  assert.equal(noon.matches[0].offset, "GMT-0:44:30");
+});
+
+test("resolves wall times with seconds", () => {
+  const overlap = classifyLocalTime("2026-04-05T02:30:15", "Australia/Melbourne");
+  assert.equal(overlap.kind, "overlap");
+  assert.deepEqual(
+    overlap.matches.map((match) => match.iso),
+    ["2026-04-04T15:30:15.000Z", "2026-04-04T16:30:15.000Z"]
+  );
+  assert.equal(classifyLocalTime("2026-10-04T02:59:59", "Australia/Melbourne").kind, "gap");
+  assert.equal(classifyLocalTime("2026-10-04T03:00:00", "Australia/Melbourne").kind, "exact");
+});
+
+test("classifies unusual transitions around the world", () => {
+  const kind = (local, zone) => classifyLocalTime(local, zone).kind;
+  assert.equal(kind("2026-10-04T02:15", "Australia/Lord_Howe"), "gap");
+  assert.equal(kind("2026-10-04T02:30", "Australia/Lord_Howe"), "exact");
+  assert.equal(kind("2026-04-05T01:45", "Australia/Lord_Howe"), "overlap");
+  assert.equal(kind("2011-12-30T12:00", "Pacific/Apia"), "gap");
+  assert.equal(kind("2011-12-29T23:59", "Pacific/Apia"), "exact");
+  assert.equal(kind("2026-03-08T02:30", "America/New_York"), "gap");
+  assert.equal(kind("2026-11-01T01:30", "America/New_York"), "overlap");
+  const kathmandu = classifyLocalTime("2026-01-01T09:00", "Asia/Kathmandu");
+  assert.equal(kathmandu.matches[0].iso, "2026-01-01T03:15:00.000Z");
+});
+
 test("formats ordinary instants and rejects impossible calendar input", () => {
   const ordinary = classifyLocalTime("2026-07-24T12:00", "Australia/Melbourne");
   assert.equal(ordinary.kind, "exact");
