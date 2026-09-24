@@ -17,6 +17,7 @@ Time bugs live in the hour that happens twice in autumn and the hour that never 
 - Resolves a local wall time in a named time zone into zero, one or two real instants
 - Makes you pick which instant you mean when daylight saving creates an overlap
 - Schedules labelled timers and advances them deterministically
+- Only ever moves time forwards while advancing; jumping the clock keeps each timer's remaining delay, like `setTimeout` across a system clock change
 - Guards big jumps against runaway timer loops, and lets you cancel them
 - Leaves the operating-system clock and the global `Date` alone
 
