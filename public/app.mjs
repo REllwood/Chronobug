@@ -4,7 +4,12 @@ import {
   formatInZone,
   selectInstantForActivation
 } from "/zoned-time-core.mjs";
-import { offersOccurrencesFor, parseDelayMinutes } from "/lab-logic.mjs";
+import {
+  createOperationGate,
+  offersOccurrencesFor,
+  parseDelayMinutes,
+  wait
+} from "/lab-logic.mjs";
 
 const scenarioForm = document.querySelector("#scenario-form");
 const zoneInput = document.querySelector("#zone");
@@ -36,7 +41,7 @@ const operationControls = [
 ];
 let clock = null;
 let activatedZone = null;
-let controller = null;
+const operations = createOperationGate();
 
 function setBusy(busy, message = "", cancelLabel = "Cancel") {
   scenarioForm.setAttribute("aria-busy", String(busy));
@@ -47,20 +52,6 @@ function setBusy(busy, message = "", cancelLabel = "Cancel") {
   });
   cancelButton.textContent = cancelLabel;
   cancelButton.hidden = !busy;
-}
-
-function wait(signal, duration = 160) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, duration);
-    signal.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(new DOMException("Cancelled", "AbortError"));
-      },
-      { once: true }
-    );
-  });
 }
 
 function resetResolution() {
@@ -108,15 +99,13 @@ for (const preset of presetButtons) {
 
 scenarioForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  controller?.abort();
-  const operationController = new AbortController();
-  controller = operationController;
+  const operation = operations.begin();
   error.hidden = true;
   error.textContent = "";
   setBusy(true, "Searching the zone timeline for matching instants…", "Cancel activation");
   try {
-    await wait(operationController.signal);
-    if (controller !== operationController) {
+    await wait(operation.signal, 160);
+    if (!operation.isCurrent()) {
       throw new DOMException("Superseded", "AbortError");
     }
     const classification = classifyLocalTime(localTimeInput.value, zoneInput.value);
@@ -161,7 +150,7 @@ scenarioForm.addEventListener("submit", async (event) => {
         : ` ${discarded.length} pending timer${discarded.length === 1 ? " was" : "s were"} discarded.`;
     setBusy(false, `Virtual application clock activated at ${selected.iso}.${discardNote}`);
   } catch (caught) {
-    if (controller !== operationController) return;
+    if (!operation.isCurrent()) return;
     setBusy(false);
     if (caught.name === "AbortError") {
       status.textContent = "Scenario activation cancelled. The previous clock remains active.";
@@ -171,11 +160,11 @@ scenarioForm.addEventListener("submit", async (event) => {
       status.textContent = "Scenario was not activated.";
     }
   } finally {
-    if (controller === operationController) controller = null;
+    operation.finish();
   }
 });
 
-cancelButton.addEventListener("click", () => controller?.abort());
+cancelButton.addEventListener("click", () => operations.cancel());
 
 localTimeInput.addEventListener("input", resetResolution);
 zoneInput.addEventListener("input", resetResolution);
@@ -215,15 +204,13 @@ for (const advanceButton of advanceButtons) {
       error.textContent = "Activate a valid scenario before advancing time.";
       return;
     }
-    controller?.abort();
-    const operationController = new AbortController();
-    controller = operationController;
+    const operation = operations.begin();
     const minutes = Number(advanceButton.dataset.advance);
     error.hidden = true;
     setBusy(true, `Advancing ${minutes} virtual minute${minutes === 1 ? "" : "s"}…`, "Cancel advance");
     try {
-      await wait(operationController.signal, minutes >= 1440 ? 260 : 120);
-      if (controller !== operationController) {
+      await wait(operation.signal, minutes >= 1440 ? 260 : 120);
+      if (!operation.isCurrent()) {
         throw new DOMException("Superseded", "AbortError");
       }
       const result = clock.advanceBy(minutes * 60_000, { maxCallbacks: 250 });
@@ -238,7 +225,7 @@ for (const advanceButton of advanceButtons) {
         setBusy(false, `${result.events.length} timer${result.events.length === 1 ? "" : "s"} fired.`);
       }
     } catch (caught) {
-      if (controller !== operationController) return;
+      if (!operation.isCurrent()) return;
       setBusy(false);
       status.textContent =
         caught.name === "AbortError"
@@ -249,7 +236,7 @@ for (const advanceButton of advanceButtons) {
         error.textContent = caught instanceof Error ? caught.message : "Advance failed.";
       }
     } finally {
-      if (controller === operationController) controller = null;
+      operation.finish();
     }
   });
 }
