@@ -40,8 +40,15 @@ v0.1 is the clock engine plus a browser lab to drive it. Next up are adapters th
 ## Development
 
 ```sh
-npm test        # clock and time zone tests
+npm test        # clock, time zone and lab tests
 npm run check   # tests plus syntax checks
+```
+
+The browser lab tests drive the real page in Chromium and run whenever Playwright is available; without it they're skipped. To include them:
+
+```sh
+npm install --no-save playwright
+npx playwright install chromium
 ```
 
 ## License
