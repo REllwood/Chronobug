@@ -174,6 +174,25 @@ test("requires a deliberate, exact choice for overlapping wall times", () => {
   );
 });
 
+test("handles years before 100 and before the common era", () => {
+  assert.deepEqual(parseLocalDateTime("0050-06-15T12:00"), {
+    year: 50, month: 6, day: 15, hour: 12, minute: 0, second: 0
+  });
+  assert.equal(parseLocalDateTime("0004-02-29T00:00").day, 29);
+  assert.equal(parseLocalDateTime("0000-02-29T00:00").day, 29);
+  assert.throws(() => parseLocalDateTime("0001-02-29T00:00"), /impossible/);
+
+  const early = classifyLocalTime("0050-06-15T12:00", "UTC");
+  assert.equal(early.kind, "exact");
+  assert.equal(early.matches[0].iso, "0050-06-15T12:00:00.000Z");
+  assert.match(formatInZone(early.matches[0].instant, "UTC"), /^0050-06-15 12:00:00 GMT/);
+
+  const firstMidnight = classifyLocalTime("0001-01-01T00:00", "Asia/Tokyo");
+  assert.equal(firstMidnight.kind, "exact");
+  assert.equal(firstMidnight.matches[0].iso, "0000-12-31T14:41:01.000Z");
+  assert.equal(zonedParts(firstMidnight.matches[0].instant, "UTC").year, 0);
+});
+
 test("reports out-of-range instants and missing zones plainly", () => {
   assert.throws(() => zonedParts(1e20, "UTC"), /outside the range JavaScript dates can represent/);
   assert.throws(() => zonedParts(0, "Not/AZone"), /"Not\/AZone" is not supported/);
