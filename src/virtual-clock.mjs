@@ -1,5 +1,15 @@
+const MAX_DATE_MILLIS = 8.64e15;
+
 function validateMillis(value, label) {
   if (!Number.isFinite(value)) throw new TypeError(`${label} must be a finite number.`);
+  return value;
+}
+
+function validateInstant(value, label) {
+  validateMillis(value, label);
+  if (Math.abs(value) > MAX_DATE_MILLIS) {
+    throw new RangeError(`${label} is outside the range JavaScript dates can represent.`);
+  }
   return value;
 }
 
@@ -10,7 +20,7 @@ export class VirtualClock {
   #advancing = false;
 
   constructor(startInstant = Date.now()) {
-    this.#now = validateMillis(startInstant, "Start instant");
+    this.#now = validateInstant(startInstant, "Start instant");
   }
 
   #assertNotAdvancing(method) {
@@ -26,8 +36,11 @@ export class VirtualClock {
   // Like setTimeout across a system clock change, pending timers keep their remaining delay.
   setInstant(instant) {
     this.#assertNotAdvancing("setInstant");
-    validateMillis(instant, "Instant");
+    validateInstant(instant, "Instant");
     const shift = instant - this.#now;
+    for (const timer of this.#timers.values()) {
+      validateInstant(timer.dueAt + shift, `Timer "${timer.label}" due time`);
+    }
     for (const timer of this.#timers.values()) timer.dueAt += shift;
     this.#now = instant;
     return this.#now;
@@ -37,6 +50,7 @@ export class VirtualClock {
     if (typeof callback !== "function") throw new TypeError("Timer callback must be a function.");
     validateMillis(delay, "Delay");
     if (delay < 0) throw new RangeError("Delay cannot be negative.");
+    validateInstant(this.#now + delay, "Timer due time");
     const id = `timer-${++this.#sequence}`;
     this.#timers.set(id, {
       id,
@@ -65,7 +79,7 @@ export class VirtualClock {
     if (!Number.isInteger(maxCallbacks) || maxCallbacks < 1) {
       throw new RangeError("maxCallbacks must be a positive integer.");
     }
-    const target = this.#now + duration;
+    const target = validateInstant(this.#now + duration, "Advance target");
     const events = [];
     let callbacks = 0;
 
@@ -121,8 +135,8 @@ export class VirtualClock {
   }
 
   exportScenario({ name, zone, resolution = "exact" }) {
-    if (!name?.trim()) throw new TypeError("Scenario name is required.");
-    if (!zone?.trim()) throw new TypeError("Scenario zone is required.");
+    if (typeof name !== "string" || !name.trim()) throw new TypeError("Scenario name is required.");
+    if (typeof zone !== "string" || !zone.trim()) throw new TypeError("Scenario zone is required.");
     return {
       version: 1,
       name: name.trim(),

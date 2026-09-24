@@ -23,12 +23,20 @@ function formatterFor(zone) {
 }
 
 export function zonedParts(instant, zone) {
-  let parts;
+  if (typeof zone !== "string" || !zone.trim()) {
+    throw new TypeError("A time zone name is required.");
+  }
+  const date = new Date(instant);
+  if (Number.isNaN(date.getTime())) {
+    throw new RangeError("Instant is outside the range JavaScript dates can represent.");
+  }
+  let formatter;
   try {
-    parts = formatterFor(zone).formatToParts(new Date(instant));
+    formatter = formatterFor(zone);
   } catch {
     throw new RangeError(`Time zone "${zone}" is not supported by this runtime.`);
   }
+  const parts = formatter.formatToParts(date);
   const result = {};
   for (const part of parts) {
     if (part.type !== "literal") result[part.type] = part.value;
