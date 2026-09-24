@@ -15,6 +15,7 @@ function formatterFor(zone) {
         minute: "2-digit",
         second: "2-digit",
         hourCycle: "h23",
+        era: "short",
         timeZoneName: "shortOffset"
       })
     );
@@ -42,7 +43,7 @@ export function zonedParts(instant, zone) {
     if (part.type !== "literal") result[part.type] = part.value;
   }
   return {
-    year: Number(result.year),
+    year: result.era === "BC" ? 1 - Number(result.year) : Number(result.year),
     month: Number(result.month),
     day: Number(result.day),
     hour: Number(result.hour),
@@ -50,6 +51,14 @@ export function zonedParts(instant, zone) {
     second: Number(result.second),
     offset: result.timeZoneName ?? null
   };
+}
+
+// Date.UTC treats years 0-99 as 1900-1999, so set the full year explicitly.
+function wallClockMillis(parts) {
+  const date = new Date(0);
+  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  date.setUTCHours(parts.hour, parts.minute, parts.second, 0);
+  return date.getTime();
 }
 
 export function parseLocalDateTime(value) {
@@ -65,7 +74,7 @@ export function parseLocalDateTime(value) {
   const hour = Number(match[4]);
   const minute = Number(match[5]);
   const second = Number(match[6] ?? "0");
-  const probe = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  const probe = new Date(wallClockMillis({ year, month, day, hour, minute, second }));
   if (
     probe.getUTCFullYear() !== year ||
     probe.getUTCMonth() + 1 !== month ||
@@ -77,10 +86,6 @@ export function parseLocalDateTime(value) {
     throw new RangeError("Local time contains an impossible calendar date.");
   }
   return { year, month, day, hour, minute, second };
-}
-
-function wallClockMillis(parts) {
-  return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
 }
 
 // Every instant showing the target wall time is `naive - offset` for an offset the zone
@@ -143,5 +148,5 @@ export function selectInstantForActivation(classification, selectedIso = "") {
 export function formatInZone(instant, zone) {
   const parts = zonedParts(instant, zone);
   const pad = (value) => String(value).padStart(2, "0");
-  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)} ${parts.offset ?? zone}`;
+  return `${String(parts.year).padStart(4, "0")}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)} ${parts.offset ?? zone}`;
 }
