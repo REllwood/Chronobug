@@ -150,6 +150,14 @@ test("formats ordinary instants and rejects impossible calendar input", () => {
   assert.throws(() => classifyLocalTime("2026-01-01T00:00", "Not/AZone"), /not supported/);
 });
 
+test("refuses to activate a wall time that falls in a gap", () => {
+  const gap = classifyLocalTime("2026-10-04T02:30", "Australia/Melbourne");
+  assert.throws(
+    () => selectInstantForActivation(gap),
+    /does not exist in the selected zone\. Choose another wall time before activation\./
+  );
+});
+
 test("requires a deliberate, exact choice for overlapping wall times", () => {
   const overlap = classifyLocalTime("2026-04-05T02:30", "Australia/Melbourne");
   assert.throws(

@@ -119,10 +119,7 @@ scenarioForm.addEventListener("submit", async (event) => {
       throw new DOMException("Superseded", "AbortError");
     }
     const classification = classifyLocalTime(localTimeInput.value, zoneInput.value);
-    if (classification.kind === "gap") {
-      resolutionLabel.hidden = true;
-      throw new Error("This local wall time does not exist in the selected zone. Choose an explicit instant before activation.");
-    }
+    if (classification.kind === "gap") resetResolution();
     const offered = [...resolutionInput.options].map((option) => option.value);
     if (classification.kind === "overlap" && !offersOccurrencesFor(offered, classification)) {
       resolutionInput.replaceChildren();
