@@ -19,6 +19,6 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",
-    "check": "npm test && node --check server.mjs && node --check src/virtual-clock.mjs && node --check src/zoned-time.mjs && node --check public/app.mjs"
+    "check": "npm test && node --check server.mjs && node --check src/virtual-clock.mjs && node --check src/zoned-time.mjs && node --check public/app.mjs && node --check public/lab-logic.mjs"
   }
 }
