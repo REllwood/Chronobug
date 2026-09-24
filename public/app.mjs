@@ -4,7 +4,7 @@ import {
   formatInZone,
   selectInstantForActivation
 } from "/zoned-time-core.mjs";
-import { offersOccurrencesFor } from "/lab-logic.mjs";
+import { offersOccurrencesFor, parseDelayMinutes } from "/lab-logic.mjs";
 
 const scenarioForm = document.querySelector("#scenario-form");
 const zoneInput = document.querySelector("#zone");
@@ -190,15 +190,21 @@ timerForm.addEventListener("submit", (event) => {
     return;
   }
   error.hidden = true;
-  const minutes = Number(timerDelay.value);
+  const maxMinutes = Number(timerDelay.max);
+  const minutes = parseDelayMinutes(timerDelay.value, maxMinutes);
   const label = timerLabel.value.trim();
-  if (!Number.isFinite(minutes) || minutes < 0 || !label) {
+  if (!label) {
     error.hidden = false;
-    error.textContent = "Provide a timer label and a non-negative delay.";
+    error.textContent = "Provide a timer label.";
+    return;
+  }
+  if (minutes === null) {
+    error.hidden = false;
+    error.textContent = `Provide a delay in whole minutes from 0 to ${maxMinutes}.`;
     return;
   }
   clock.schedule(() => {}, minutes * 60_000, label);
-  addEvent(clock.now(), `${label} scheduled for ${minutes} minutes`, "pending");
+  addEvent(clock.now(), `${label} scheduled for ${minutes} minute${minutes === 1 ? "" : "s"}`, "pending");
   updateReadout();
 });
 
