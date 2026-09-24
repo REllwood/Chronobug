@@ -38,13 +38,14 @@ let clock = null;
 let activatedZone = null;
 let controller = null;
 
-function setBusy(busy, message = "") {
+function setBusy(busy, message = "", cancelLabel = "Cancel") {
   scenarioForm.setAttribute("aria-busy", String(busy));
   status.dataset.loading = String(busy);
   status.textContent = message;
   operationControls.forEach((control) => {
     control.disabled = busy;
   });
+  cancelButton.textContent = cancelLabel;
   cancelButton.hidden = !busy;
 }
 
@@ -112,7 +113,7 @@ scenarioForm.addEventListener("submit", async (event) => {
   controller = operationController;
   error.hidden = true;
   error.textContent = "";
-  setBusy(true, "Searching the zone timeline for matching instants…");
+  setBusy(true, "Searching the zone timeline for matching instants…", "Cancel activation");
   try {
     await wait(operationController.signal);
     if (controller !== operationController) {
@@ -132,7 +133,7 @@ scenarioForm.addEventListener("submit", async (event) => {
       classification.matches.forEach((match, index) => {
         const option = document.createElement("option");
         option.value = match.iso;
-        option.textContent = `${index === 0 ? "Earlier" : "Later"} occurrence — ${match.iso} (${match.offset})`;
+        option.textContent = `${index === 0 ? "Earlier" : "Later"} occurrence (${match.offset}) — ${match.iso}`;
         resolutionInput.append(option);
       });
       resolutionLabel.hidden = false;
@@ -201,7 +202,9 @@ timerForm.addEventListener("submit", (event) => {
     return;
   }
   clock.schedule(() => {}, minutes * 60_000, label);
-  addEvent(clock.now(), `${label} scheduled for ${minutes} minute${minutes === 1 ? "" : "s"}`, "pending");
+  const scheduled = `${label} scheduled for ${minutes} minute${minutes === 1 ? "" : "s"}`;
+  addEvent(clock.now(), scheduled, "pending");
+  status.textContent = `${scheduled}.`;
   updateReadout();
 });
 
@@ -217,7 +220,7 @@ for (const advanceButton of advanceButtons) {
     controller = operationController;
     const minutes = Number(advanceButton.dataset.advance);
     error.hidden = true;
-    setBusy(true, `Advancing ${minutes} virtual minute${minutes === 1 ? "" : "s"}…`);
+    setBusy(true, `Advancing ${minutes} virtual minute${minutes === 1 ? "" : "s"}…`, "Cancel advance");
     try {
       await wait(operationController.signal, minutes >= 1440 ? 260 : 120);
       if (controller !== operationController) {
