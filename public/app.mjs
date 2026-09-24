@@ -143,12 +143,25 @@ scenarioForm.addEventListener("submit", async (event) => {
       return;
     }
     const selected = selectInstantForActivation(classification, resolutionInput.value);
+    const discarded = clock?.pending() ?? [];
+    if (discarded.length > 0) {
+      const labels = discarded.map((timer) => timer.label).join(", ");
+      addEvent(
+        clock.now(),
+        `Discarded ${discarded.length} pending timer${discarded.length === 1 ? "" : "s"} (${labels})`,
+        "cleared"
+      );
+    }
     clock = new VirtualClock(selected.instant);
     activatedZone = classification.zone;
     resolutionLabel.hidden = classification.kind !== "overlap";
     updateReadout();
     addEvent(clock.now(), `Scenario activated (${classification.kind})`, "ready");
-    setBusy(false, `Virtual application clock activated at ${selected.iso}.`);
+    const discardNote =
+      discarded.length === 0
+        ? ""
+        : ` ${discarded.length} pending timer${discarded.length === 1 ? " was" : "s were"} discarded.`;
+    setBusy(false, `Virtual application clock activated at ${selected.iso}.${discardNote}`);
   } catch (caught) {
     if (controller !== operationController) return;
     setBusy(false);
