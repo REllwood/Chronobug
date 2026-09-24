@@ -5,7 +5,8 @@ import {
   classifyLocalTime,
   formatInZone,
   parseLocalDateTime,
-  selectInstantForActivation
+  selectInstantForActivation,
+  zonedParts
 } from "../src/zoned-time.mjs";
 
 test("fires timers in deterministic due-time and insertion order", () => {
@@ -163,6 +164,32 @@ test("requires a deliberate, exact choice for overlapping wall times", () => {
     selectInstantForActivation(overlap, overlap.matches[1].iso).iso,
     overlap.matches[1].iso
   );
+});
+
+test("reports out-of-range instants and missing zones plainly", () => {
+  assert.throws(() => zonedParts(1e20, "UTC"), /outside the range JavaScript dates can represent/);
+  assert.throws(() => zonedParts(0, "Not/AZone"), /"Not\/AZone" is not supported/);
+  assert.throws(() => classifyLocalTime("2026-07-24T12:00", undefined), /time zone name is required/);
+  assert.throws(() => classifyLocalTime("2026-07-24T12:00", "  "), /time zone name is required/);
+});
+
+test("keeps the virtual clock inside the range JavaScript dates support", () => {
+  assert.throws(() => new VirtualClock(1e20), /Start instant is outside the range/);
+  const clock = new VirtualClock(8.64e15 - 1000);
+  assert.throws(() => clock.setInstant(-1e20), /Instant is outside the range/);
+  assert.throws(() => clock.advanceBy(2000), /Advance target is outside the range/);
+  assert.throws(() => clock.schedule(() => {}, 2000, "late"), /Timer due time is outside the range/);
+  clock.schedule(() => {}, 500, "edge");
+  assert.throws(() => clock.setInstant(8.64e15), /Timer "edge" due time is outside the range/);
+  assert.equal(clock.now(), 8.64e15 - 1000);
+  assert.equal(clock.pending()[0].dueAt, 8.64e15 - 500);
+  assert.equal(clock.exportScenario({ name: "Edge", zone: "UTC" }).pendingTimers.length, 1);
+});
+
+test("requires string names and zones when exporting a scenario", () => {
+  const clock = new VirtualClock(0);
+  assert.throws(() => clock.exportScenario({ name: 42, zone: "UTC" }), /Scenario name is required/);
+  assert.throws(() => clock.exportScenario({ name: "Case", zone: null }), /Scenario zone is required/);
 });
 
 test("exports readable scenario metadata without callback values", () => {
